@@ -28,13 +28,13 @@ def ApplyOrbitFile(data):
 
     parameters = HashMap()
 
-    Operator_load = GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+    GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
 
     parameters.put('orbitType', 'Sentinel Precise (Auto Download)')
     parameters.put('polyDegree', '3')
     parameters.put('continueOnFail', 'false')
 
-    apply_orbit_file = Operator_load.createProduct('Apply-Orbit-File', parameters, data)
+    apply_orbit_file = GPF.createProduct('Apply-Orbit-File', parameters, data)
 
     return apply_orbit_file
 
@@ -43,12 +43,12 @@ def ApplyOrbitFile(data):
 def Subset(data, x, y, w, h):
 
     HashMap = jpy.get_type('java.util.HashMap')
-    Operator_load = GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+    GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
 
     parameters = HashMap()
     parameters.put('copyMetadata', True)
     parameters.put('region', "%s,%s,%s,%s" % (x, y, w, h))
-    subset = Operator_load.createProduct('Subset', parameters, data)
+    subset = GPF.createProduct('Subset', parameters, data)
 
     return subset
 
@@ -76,7 +76,7 @@ def Information(data):
 
 # ploting the image
 
-def plotBand(data, banda):
+def plotBand(data, banda, vmin, vmax):
     
     w = data.getSceneRasterWidth()
     h = data.getSceneRasterHeight()
@@ -92,10 +92,85 @@ def plotBand(data, banda):
     height = 12
 
     plt.figure(figsize=(width, height))
-    imgplot = plt.imshow(band_data, cmap=plt.cm.binary)
+    imgplot = plt.imshow(band_data, cmap=plt.cm.binary, vmin=vmin, vmax=vmax)
 
     return imgplot
 
+# Radiometric Calibration
+
+def Calibration(data, band, pol):
+    
+    parameters = HashMap()
+
+    parameters.put('outputSigmaBand', True)
+    parameters.put('sourceBands', band)
+    parameters.put('selectedPolarisations', pol) # Consertar
+    parameters.put('outputImageScaleInDb', False)
+
+    Sigma0 = GPF.createProduct('Calibration', parameters, data)
+
+    return Sigma0
+
+def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
+
+    X = str(filterSizeX)
+    Y = str(filterSizeY)
+
+    parameters.put('sourceBands', data)
+    parameters.put('filter', filter)
+    parameters.put('filterSizeX', X)
+    parameters.put('filterSizeY', Y)
+    parameters.put('dampingFactor', '2')
+    parameters.put('estimateENL', 'true')
+    parameters.put('enl', '1.0')
+    parameters.put('numLooksStr', '1')
+    parameters.put('targetWindowSizeStr', '3x3')
+    parameters.put('sigmaStr', '0.9')
+    parameters.put('anSize', '50')
+
+    speckle_filter = GPF.createProduct('Speckle-Filter', parameters, data)
+
+    return speckle_filter
+
+def Terrain_Correction(data):
+
+    parameters = HashMap()
+
+    parameters.put('demName', 'SRTM 3Sec (Auto Download)')
+    parameters.put('demResamplingMethod', 'BILINEAR_INTERPOLATION')
+    parameters.put('imgResamplingMethod', 'BILINEAR_INTERPOLATION')
+    parameter.put('pixelSpacingInMeter', 10.0)
+    parameters.put('sourceBands', data)
+
+    terrain_corrected = GPF.createProduct('Terrain-Correction', parameters, data)
+
+    return terrain_corrected
+
+def Convert_to_dB(data):
+
+    print('\Converting to dB...')
+
+    parameters = HashMap()
+
+    parameters.put('sourceBands', data)
+
+    converted = GPF.createProduct('LinearToFromdB', parameters, data)
+
+    return converted
+
+def listParams(operator_name):
+
+    GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+    
+    op_spi = GPF.getDefaultInstance().getOperatorSpiRegistry().getOperatorSpi(operator_name)
+
+    print('Operator name:', op_spi.getOperatorDescriptor().getName())
+    print('Operator alias:', op_spi.getOperatorDescriptor().getAlias())
+
+    param_desc = op_spi.getOperatorDescriptor().getParameterDescriptors()
+
+    for param in param_desc:
+        print(param.getName(), 'or', param.getAlias())
 # ------------------------------------------------------------------------------------------------------
 
 # Path to the data
@@ -106,11 +181,15 @@ product = ProductIO.readProduct(s1_path)
 
 # ------------------------------------------------------------------------------------------------------
 
+Information(product)
+
 S1_Orb = ApplyOrbitFile(product)
 
 S1_Orb_Subset = Subset(S1_Orb, 0, 9928, 25580, 16846)
 
 Information(S1_Orb_Subset)
+
+listParams('Terrain-Correction')
 
 # ------------------------------------------------------------------------------------------------------
 
