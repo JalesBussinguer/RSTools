@@ -20,42 +20,59 @@ from snappy import HashMap
 from snappy import GPF
 from snappy import jpy
 
-# Path to the data
-s1_path = 'C:/Users/jales/Desktop/S1A.zip'
+# ------------------------------------------------------------------------------------
 
-# Reading the data
-product = ProductIO.readProduct(s1_path)
+# Orthorectification
 
-x = 0
-y = 9928
-w = 25580
-h = 16846
+def ApplyOrbitFile(data):
 
-HashMap = jpy.get_type('java.util.HashMap')
-GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+    parameters = HashMap()
 
-parameters = HashMap()
-parameters.put('copyMetadata', True)
-parameters.put('region', "%s,%s,%s,%s" % (x, y, w, h))
-subset = GPF.createProduct('Subset', parameters, product)
+    Operator_load = GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
 
-# Getting the width of the scene
-width = subset.getSceneRasterWidth()
-print('Width: {} px'.format(width))
+    parameters.put('orbitType', 'Sentinel Precise (Auto Download)')
+    parameters.put('polyDegree', '3')
+    parameters.put('continueOnFail', 'false')
 
-# Getting the height of the scene
-height = subset.getSceneRasterHeight()
-print('Height: {} px'.format(height))
+    apply_orbit_file = Operator_load.createProduct('Apply-Orbit-File', parameters, data)
 
-# Getting the dataset name
-name = subset.getName()
-print('Name: {}'.format(name))
+    return apply_orbit_file
 
-# Getting the band names in the imagery
-band_names = subset.getBandNames()
-print('Band names: {}'.format(', '.join(band_names)))
+# Subset the image
 
-# ------------------------------------------------------------------------------------------------------
+def Subset(data, x, y, w, h):
+
+    HashMap = jpy.get_type('java.util.HashMap')
+    Operator_load = GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+
+    parameters = HashMap()
+    parameters.put('copyMetadata', True)
+    parameters.put('region', "%s,%s,%s,%s" % (x, y, w, h))
+    subset = Operator_load.createProduct('Subset', parameters, data)
+
+    return subset
+
+# Getting information from the dataset
+
+def Information(data):
+
+    # Getting the width of the scene
+    width = data.getSceneRasterWidth()
+    print('Width: {} px'.format(width))
+
+    # Getting the height of the scene
+    height = data.getSceneRasterHeight()
+    print('Height: {} px'.format(height))
+
+    # Getting the dataset name
+    name = data.getName()
+    print('Name: {}'.format(name))
+
+    # Getting the band names in the imagery
+    band_names = data.getBandNames()
+    print('Band names: {}'.format(', '.join(band_names)))
+
+    return width, height, name, band_names
 
 # ploting the image
 
@@ -79,20 +96,26 @@ def plotBand(data, banda):
 
     return imgplot
 
-plotBand(subset, 'Intensity_VH')
+# ------------------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------
+# Path to the data
+s1_path = 'C:/Users/jales/Desktop/S1A.zip'
 
-# Orthorectification
+# Reading the data
+product = ProductIO.readProduct(s1_path)
 
-#parameters = HashMap()
+# ------------------------------------------------------------------------------------------------------
 
-#GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+S1_Orb = ApplyOrbitFile(product)
 
-#parameters.put('orbitType', "Sentinel Precise (Auto Download)')
-#parameters.put('polyDegree', '3')
-#parameters.put('continueOnFail', 'false')
+S1_Orb_Subset = Subset(S1_Orb, 0, 9928, 25580, 16846)
 
-#apply_orbit_file = GPF.createProduct('Apply-Orbit-File', parameters, data)
+Information(S1_Orb_Subset)
 
-# ---------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------
+
+#plotBand(S1_Orb_Subset, 'Intensity_VH')
+
+# ------------------------------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------------
