@@ -100,7 +100,7 @@ def plotBand(data, banda, vmin, vmax):
     height = 12
 
     plt.figure(figsize=(width, height))
-    imgplot = plt.imshow(band_data, cmap=plt.cm.binary, vmin=vmin, vmax=vmax)
+    imgplot = plt.imshow(band_data, cmap='binary', vmin=vmin, vmax=vmax)
 
     return imgplot
 
@@ -127,6 +127,8 @@ def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
 
     X = str(filterSizeX)
     Y = str(filterSizeY)
+
+    parameters = HashMap()
 
     parameters.put('sourceBands', data)
     parameters.put('filter', filter)
@@ -155,7 +157,7 @@ def Terrain_Correction(data):
     parameters.put('demName', 'SRTM 3Sec (Auto Download)')
     parameters.put('demResamplingMethod', 'BILINEAR_INTERPOLATION')
     parameters.put('imgResamplingMethod', 'BILINEAR_INTERPOLATION')
-    parameter.put('pixelSpacingInMeter', 10.0)
+    parameters.put('pixelSpacingInMeter', 10.0)
     parameters.put('sourceBands', data)
 
     terrain_corrected = GPF.createProduct('Terrain-Correction', parameters, data)
@@ -166,8 +168,8 @@ def Terrain_Correction(data):
 # 
 
 def Convert_to_dB(data):
-
-    print('\Converting to dB...')
+    
+    print('Converting to dB...')
 
     parameters = HashMap()
 
@@ -176,6 +178,8 @@ def Convert_to_dB(data):
     converted = GPF.createProduct('LinearToFromdB', parameters, data)
 
     return converted
+
+# Função que reo
 
 def listParams(operator_name):
 
@@ -190,6 +194,7 @@ def listParams(operator_name):
 
     for param in param_desc:
         print(param.getName(), 'or', param.getAlias())
+        
 # ------------------------------------------------------------------------------------------------------
 
 # Path to the data
