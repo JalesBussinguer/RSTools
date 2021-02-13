@@ -146,7 +146,6 @@ def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
 
     return speckle_filter
 
-
 # Correção Geométrica (Range Doppler Terrain Correction)
 # Função que ...
 
@@ -165,7 +164,7 @@ def Terrain_Correction(data):
     return terrain_corrected
 
 # Conversão para decibel (LinearToFromdB)
-# 
+# Convertendo os números digitais para valores em decibel
 
 def Convert_to_dB(data):
     
@@ -179,7 +178,7 @@ def Convert_to_dB(data):
 
     return converted
 
-# Função que reo
+# Função que lista os parâmetros de cada operador do SNAP
 
 def listParams(operator_name):
 
@@ -194,7 +193,7 @@ def listParams(operator_name):
 
     for param in param_desc:
         print(param.getName(), 'or', param.getAlias())
-        
+
 # ------------------------------------------------------------------------------------------------------
 
 # Path to the data
