@@ -21,8 +21,13 @@ from snappy import GPF
 from snappy import jpy
 
 # ------------------------------------------------------------------------------------
+"""
+Funções para executar os operadores do SNAP
 
-# Orthorectification
+"""
+
+# Ortorretificação (Orthorectification) - Apply Orbit File
+# Função que faz a correção do posicionamento de órbita da imagem
 
 def ApplyOrbitFile(data):
 
@@ -38,7 +43,8 @@ def ApplyOrbitFile(data):
 
     return apply_orbit_file
 
-# Subset the image
+# Recorte - Subset
+# Função que faz o recorte de uma imagem
 
 def Subset(data, x, y, w, h):
 
@@ -52,7 +58,8 @@ def Subset(data, x, y, w, h):
 
     return subset
 
-# Getting information from the dataset
+# Informações - Information
+# Função que retorna informações básicas da imagem como o número de pixels em X e Y, o nome da imagem e das bandas
 
 def Information(data):
 
@@ -74,7 +81,8 @@ def Information(data):
 
     return width, height, name, band_names
 
-# ploting the image
+# Plotagem - Plotting
+# Função que plota a imagem em um gráfico
 
 def plotBand(data, banda, vmin, vmax):
     
@@ -96,7 +104,8 @@ def plotBand(data, banda, vmin, vmax):
 
     return imgplot
 
-# Radiometric Calibration
+# Calibração Radiométrica - Radiometric Calibration
+# Função que aplica uma correção radiométrica na imagem, transformando os números digitais dos pixels em valroes com significado físico
 
 def Calibration(data, band, pol):
     
@@ -104,12 +113,15 @@ def Calibration(data, band, pol):
 
     parameters.put('outputSigmaBand', True)
     parameters.put('sourceBands', band)
-    parameters.put('selectedPolarisations', pol) # Consertar
+    parameters.put('selectedPolarisations', pol)
     parameters.put('outputImageScaleInDb', False)
 
     Sigma0 = GPF.createProduct('Calibration', parameters, data)
 
     return Sigma0
+
+# Filtragem Speckle - Speckle Filtering
+# Função que aplica um filtro para a redução de speckle na imagem
 
 def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
 
@@ -132,6 +144,10 @@ def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
 
     return speckle_filter
 
+
+# Correção Geométrica (Range Doppler Terrain Correction)
+# Função que ...
+
 def Terrain_Correction(data):
 
     parameters = HashMap()
@@ -145,6 +161,9 @@ def Terrain_Correction(data):
     terrain_corrected = GPF.createProduct('Terrain-Correction', parameters, data)
 
     return terrain_corrected
+
+# Conversão para decibel (LinearToFromdB)
+# 
 
 def Convert_to_dB(data):
 
