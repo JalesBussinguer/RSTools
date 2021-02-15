@@ -31,6 +31,8 @@ Funções para executar os operadores do SNAP
 
 def ApplyOrbitFile(data):
 
+    print('Aplying Orbit File...')
+
     parameters = HashMap()
 
     GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
@@ -39,14 +41,14 @@ def ApplyOrbitFile(data):
     parameters.put('polyDegree', '3')
     parameters.put('continueOnFail', 'false')
 
-    apply_orbit_file = GPF.createProduct('Apply-Orbit-File', parameters, data)
-
-    return apply_orbit_file
+    return GPF.createProduct('Apply-Orbit-File', parameters, data)
 
 # Recorte - Subset
 # Função que faz o recorte de uma imagem
 
 def Subset(data, x, y, w, h):
+
+    print('Subsetting the image...')
 
     HashMap = jpy.get_type('java.util.HashMap')
     GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
@@ -54,14 +56,15 @@ def Subset(data, x, y, w, h):
     parameters = HashMap()
     parameters.put('copyMetadata', True)
     parameters.put('region', "%s,%s,%s,%s" % (x, y, w, h))
-    subset = GPF.createProduct('Subset', parameters, data)
 
-    return subset
+    return GPF.createProduct('Subset', parameters, data)
 
 # Informações - Information
 # Função que retorna informações básicas da imagem como o número de pixels em X e Y, o nome da imagem e das bandas
 
-def Information(data):
+def ProductInformation(data):
+
+    print('Getting product informations...')
 
     # Getting the width of the scene
     width = data.getSceneRasterWidth()
@@ -85,6 +88,8 @@ def Information(data):
 # Função que plota a imagem em um gráfico
 
 def plotBand(data, banda, vmin, vmax):
+
+    print('Plotting the image...')
     
     w = data.getSceneRasterWidth()
     h = data.getSceneRasterHeight()
@@ -108,29 +113,31 @@ def plotBand(data, banda, vmin, vmax):
 # Função que aplica uma correção radiométrica na imagem, transformando os números digitais dos pixels em valroes com significado físico
 
 def Calibration(data, band, pol):
+
+    print('Calibrating...')
     
     parameters = HashMap()
 
-    parameters.put('outputSigmaBand', True)
+    parameters.put('outputSigmaBand', True) 
     parameters.put('sourceBands', band)
     parameters.put('selectedPolarisations', pol)
     parameters.put('outputImageScaleInDb', False)
 
-    Sigma0 = GPF.createProduct('Calibration', parameters, data)
-
-    return Sigma0
+    return GPF.createProduct('Calibration', parameters, data)
 
 # Filtragem Speckle - Speckle Filtering
 # Função que aplica um filtro para a redução de speckle na imagem
 
-def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
+def SpeckleFilter(data, source_band, filter, filterSizeX, filterSizeY):
+
+    print('Aplying the Speckle Filter...')
 
     X = str(filterSizeX)
     Y = str(filterSizeY)
 
     parameters = HashMap()
 
-    parameters.put('sourceBands', data)
+    parameters.put('sourceBands', source_band)
     parameters.put('filter', filter)
     parameters.put('filterSizeX', X)
     parameters.put('filterSizeY', Y)
@@ -142,41 +149,37 @@ def SpeckleFilter(data, filter, filterSizeX, filterSizeY):
     parameters.put('sigmaStr', '0.9')
     parameters.put('anSize', '50')
 
-    speckle_filter = GPF.createProduct('Speckle-Filter', parameters, data)
-
-    return speckle_filter
+    return GPF.createProduct('Speckle-Filter', parameters, data)
 
 # Correção Geométrica (Range Doppler Terrain Correction)
 # Função que ...
 
-def Terrain_Correction(data):
+def Terrain_Correction(data, source_band):
+
+    print('Aplying the Range Doppler Terrain Correction...')
 
     parameters = HashMap()
 
-    parameters.put('demName', 'SRTM 3Sec (Auto Download)')
+    parameters.put('demName', 'SRTM 3Sec')
     parameters.put('demResamplingMethod', 'BILINEAR_INTERPOLATION')
     parameters.put('imgResamplingMethod', 'BILINEAR_INTERPOLATION')
     parameters.put('pixelSpacingInMeter', 10.0)
-    parameters.put('sourceBands', data)
+    parameters.put('sourceBands', source_band)
 
-    terrain_corrected = GPF.createProduct('Terrain-Correction', parameters, data)
-
-    return terrain_corrected
+    return GPF.createProduct('Terrain-Correction', parameters, data)
 
 # Conversão para decibel (LinearToFromdB)
 # Convertendo os números digitais para valores em decibel
 
-def Convert_to_dB(data):
+def Convert_to_dB(data, source_band):
     
     print('Converting to dB...')
 
     parameters = HashMap()
 
-    parameters.put('sourceBands', data)
+    parameters.put('sourceBands', source_band)
 
-    converted = GPF.createProduct('LinearToFromdB', parameters, data)
-
-    return converted
+    return GPF.createProduct('LinearToFromdB', parameters, data)
 
 # Função que lista os parâmetros de cada operador do SNAP
 
@@ -196,7 +199,11 @@ def listParams(operator_name):
 
 # ------------------------------------------------------------------------------------------------------
 
-# Path to the data
+if __name__ == '__main__':
+    # GPF Initialization
+    GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
+
+# Product initialization
 s1_path = 'C:/Users/jales/Desktop/S1A.zip'
 
 # Reading the data
@@ -204,15 +211,23 @@ product = ProductIO.readProduct(s1_path)
 
 # ------------------------------------------------------------------------------------------------------
 
-Information(product)
+ProductInformation(product)
 
 S1_Orb = ApplyOrbitFile(product)
 
 S1_Orb_Subset = Subset(S1_Orb, 0, 9928, 25580, 16846)
 
-Information(S1_Orb_Subset)
+ProductInformation(S1_Orb_Subset)
 
-listParams('Terrain-Correction')
+S1_Orb_Subset_Cal = Calibration(S1_Orb_Subset, 'Intensity_VH', 'VH')
+
+S1_Orb_Subset_Cal_Ter = Terrain_Correction(S1_Orb_Subset_Cal, 'Sigma0_VH')
+
+S1_Orb_Subset_Cal_Ter_Spec = SpeckleFilter(S1_Orb_Subset_Cal_Ter, 'Sigma0_VH', 'Lee', 3, 3)
+
+S1_Orb_Subset_Cal_Ter_Spec_dB = Convert_to_dB(S1_Orb_Subset_Cal_Ter_Spec, 'Sigma0_VH')
+
+ProductIO.writeProduct(S1_Orb_Subset_Cal_Ter_Spec_dB, 'C:/Users/jales/Desktop/S1/1A_processed', 'ENVI')
 
 # ------------------------------------------------------------------------------------------------------
 
