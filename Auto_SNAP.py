@@ -22,6 +22,12 @@ from snappy import HashMap
 from snappy import GPF
 from snappy import jpy
 
+# Módulos do Scikit-Image
+
+from skimage.filters import threshold_isodata
+from skimage.filters import threshold_otsu
+from skimage.filters import threshold_mean
+
 # ------------------------------------------------------------------------------------
 
 """
@@ -87,31 +93,6 @@ def ProductInformation(data):
     print('Band names: {}'.format(', '.join(band_names)))
 
     return width, height, name, band_names
-
-# Plotagem - Plotting
-# Função que plota a imagem em um gráfico
-
-def plotBand(data, banda, vmin, vmax):
-
-    print('Plotting the image...')
-    
-    w = data.getSceneRasterWidth()
-    h = data.getSceneRasterHeight()
-    band = data.getBand(banda)
-    print(w, h)
-
-    band_data = np.zeros(w * h, np.float32)
-    band.readPixels(0, 0, w, h, band_data)
-
-    band_data.shape = h, w
-
-    width = 12
-    height = 12
-
-    plt.figure(figsize=(width, height))
-    imgplot = plt.imshow(band_data, cmap='binary', vmin=vmin, vmax=vmax)
-
-    return imgplot
 
 # Calibração Radiométrica - Radiometric Calibration
 # Função que aplica uma correção radiométrica na imagem, transformando os números digitais dos pixels em valroes com significado físico
@@ -198,7 +179,68 @@ def listParams(operator_name):
     for param in param_desc:
         print(param.getName(), 'or', param.getAlias())
 
+# --------------------------------------------------------------------------------------------------------------
+
+# Plotagem - Plotting
+
+# Função que plota a imagem em um gráfico
+def plotBand(data, banda, vmin, vmax):
+
+    print('Plotting the image...')
+    
+    w = data.getSceneRasterWidth()
+    h = data.getSceneRasterHeight()
+    band = data.getBand(banda)
+    print(w, h)
+
+    band_data = np.zeros(w * h, np.float32)
+    band.readPixels(0, 0, w, h, band_data)
+
+    band_data.shape = h, w
+
+    width = 12
+    height = 12
+
+    plt.figure(figsize=(width, height))
+    imgplot = plt.imshow(band_data, cmap='binary', vmin=vmin, vmax=vmax)
+
+    return imgplot
+
+# Função que plota o histograma da imagem
+def plotHistogram(data, banda, bins):
+
+    print('Plotting the histogram...')
+    
+    w = data.getSceneRasterWidth()
+    h = data.getSceneRasterHeight()
+    band = data.getBand(banda)
+    
+    band_data = np.zeros(w * h, np.float32)
+    band.readPixels(0, 0, w, h, band_data)
+    band_data.shape = h, w
+
+    histplot = plt.hist(np.asarray(band_data, dtype='float'), bins=bins, range=[-33, -1], normed=True)
+
+    return histplot.show()
+
 # ------------------------------------------------------------------------------------------------------
+
+# Binarização da imagem
+
+def binarization(data, banda, bins):
+    
+    w = data.getSceneRasterWidth()
+    h = data.getSceneRasterHeight()
+    band = data.getBand(banda)
+
+    band_data = np.zeros(w * h, np.float32)
+
+    hist = plt.hist(np.asarray(band_data, dtype='float'), bins=bins, range=[-33, -1])
+    
+    return threshold_isodata(np.asarray(band_data, dtype='float'), return_all=True)
+
+# ------------------------------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
 
@@ -229,14 +271,15 @@ if __name__ == '__main__':
 
     S1_Orb_Subset_Cal_Ter_Spec_dB = Convert_to_dB(S1_Orb_Subset_Cal_Ter_Spec, 'Sigma0_VH')
 
-    print('Writing...')
-    ProductIO.writeProduct(S1_Orb_Subset_Cal_Ter_Spec_dB, 'C:/Users/jales/Desktop/S1/S1A_processado', 'ENVI')
+    #print('Writing...')
+    #ProductIO.writeProduct(S1_Orb_Subset_Cal_Ter_Spec_dB, 'C:/Users/jales/Desktop/S1/S1A_processado', 'ENVI')
 
     print('Processamento finalizado')
-# ------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------
 
-#plotBand(S1_Orb_Subset, 'Intensity_VH')
+    #plotBand(S1_Orb_Subset, 'Intensity_VH')
+    print('Thresholding...')
+    binarization(S1_Orb_Subset_Cal_Ter_Spec_dB, 'Sigma0_VH', 2048)
+    # ------------------------------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------
