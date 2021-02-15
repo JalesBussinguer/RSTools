@@ -1,27 +1,31 @@
-# This is a Python script for process Sentinel-1 imagery for
-# water masks extraction
+"""
 
-# Imports
+Este é um script em Python para a execução automatizada de processamentos básicos em imagens de radar da constelação Sentinel-1 (ESA).
 
-# Basic Libraries
+Autor: Jales de Freitas Bussinguer
+
+site: https://jalesbussinguer.wixsite.com/portfolio
+
+"""
+
+# Importações
+
+# Bibliotecas básicas
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import os
 
-# Snappy modules
+# Módulos da biblioteca snappy
 
-from snappy import Product
 from snappy import ProductIO
-from snappy import ProductUtils
-from snappy import WKTReader
 from snappy import HashMap
 from snappy import GPF
 from snappy import jpy
 
 # ------------------------------------------------------------------------------------
+
 """
+
 Funções para executar os operadores do SNAP
 
 """
@@ -132,15 +136,12 @@ def SpeckleFilter(data, source_band, filter, filterSizeX, filterSizeY):
 
     print('Aplying the Speckle Filter...')
 
-    X = str(filterSizeX)
-    Y = str(filterSizeY)
-
     parameters = HashMap()
 
     parameters.put('sourceBands', source_band)
     parameters.put('filter', filter)
-    parameters.put('filterSizeX', X)
-    parameters.put('filterSizeY', Y)
+    parameters.put('filterSizeX', '%s' % (filterSizeX))
+    parameters.put('filterSizeY', '%s' % (filterSizeY))
     parameters.put('dampingFactor', '2')
     parameters.put('estimateENL', 'true')
     parameters.put('enl', '1.0')
@@ -200,35 +201,38 @@ def listParams(operator_name):
 # ------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+
     # GPF Initialization
     GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
 
-# Product initialization
-s1_path = 'C:/Users/jales/Desktop/S1A.zip'
+    # Product initialization
+    s1_path = 'C:/Users/jales/Desktop/S1A.zip'
 
-# Reading the data
-product = ProductIO.readProduct(s1_path)
+    # Reading the data
+    product = ProductIO.readProduct(s1_path)
 
-# ------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------
 
-ProductInformation(product)
+    ProductInformation(product)
 
-S1_Orb = ApplyOrbitFile(product)
+    S1_Orb = ApplyOrbitFile(product)
 
-S1_Orb_Subset = Subset(S1_Orb, 0, 9928, 25580, 16846)
+    S1_Orb_Subset = Subset(S1_Orb, 0, 9928, 25580, 16846)
 
-ProductInformation(S1_Orb_Subset)
+    ProductInformation(S1_Orb_Subset)
 
-S1_Orb_Subset_Cal = Calibration(S1_Orb_Subset, 'Intensity_VH', 'VH')
+    S1_Orb_Subset_Cal = Calibration(S1_Orb_Subset, 'Intensity_VH', 'VH')
 
-S1_Orb_Subset_Cal_Ter = Terrain_Correction(S1_Orb_Subset_Cal, 'Sigma0_VH')
+    S1_Orb_Subset_Cal_Ter = Terrain_Correction(S1_Orb_Subset_Cal, 'Sigma0_VH')
 
-S1_Orb_Subset_Cal_Ter_Spec = SpeckleFilter(S1_Orb_Subset_Cal_Ter, 'Sigma0_VH', 'Lee', 3, 3)
+    S1_Orb_Subset_Cal_Ter_Spec = SpeckleFilter(S1_Orb_Subset_Cal_Ter, 'Sigma0_VH', 'Lee', 3, 3)
 
-S1_Orb_Subset_Cal_Ter_Spec_dB = Convert_to_dB(S1_Orb_Subset_Cal_Ter_Spec, 'Sigma0_VH')
+    S1_Orb_Subset_Cal_Ter_Spec_dB = Convert_to_dB(S1_Orb_Subset_Cal_Ter_Spec, 'Sigma0_VH')
 
-ProductIO.writeProduct(S1_Orb_Subset_Cal_Ter_Spec_dB, 'C:/Users/jales/Desktop/S1/1A_processed', 'ENVI')
+    print('Writing...')
+    ProductIO.writeProduct(S1_Orb_Subset_Cal_Ter_Spec_dB, 'C:/Users/jales/Desktop/S1/S1A_processado', 'ENVI')
 
+    print('Processamento finalizado')
 # ------------------------------------------------------------------------------------------------------
 
 #plotBand(S1_Orb_Subset, 'Intensity_VH')
