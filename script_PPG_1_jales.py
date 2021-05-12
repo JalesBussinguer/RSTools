@@ -93,7 +93,6 @@ print('Dados de saída:')
 print(df_resultados)
 
 # Caminho onde o arquivo será salvo
-
 path=str(input('Digite o caminho onde o arquivo será salvo:', )) # Dica: C:\users\jales\Desktop\
 
 # Exportação dos resultados para um arquivo .csv
